@@ -1,5 +1,7 @@
 package net.giantgames.replay.session.recorder;
 
+import net.giantgames.replay.serialize.SerializeReplayObject;
+import net.giantgames.replay.session.recorder.result.Recording;
 import net.giantgames.replay.session.frame.Frame;
 import net.giantgames.replay.session.object.IReplayObject;
 import net.giantgames.replay.session.object.PacketWorld;
@@ -18,18 +20,13 @@ public class WorldRecorder extends AbstractRecorder<IReplayObject> {
         this.packetWorld = packetWorld;
     }
 
-    public void update() {
-        this.recordedFrames.add(snap());
-    }
-
     @Override
-    public Frame<IReplayObject> snap() {
-        packetWorld.snap(frameBuilder);
+    public Frame<IReplayObject> snap(int frame) {
         return frameBuilder.buildAndClear();
     }
 
-    public IReplayObject[] finish() {
-        return recordedFrames.toArray(new IReplayObject[0]);
+    @Override
+    public Recording finish() {
+        return new Recording(startFrame, new SerializeReplayObject(packetWorld.getWorld().getName(), 0, null), frames);
     }
-
 }
