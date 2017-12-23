@@ -1,0 +1,32 @@
+package net.giantgames.replay.listener.player;
+
+import net.giantgames.replay.ReplayPlugin;
+import net.giantgames.replay.session.action.entity.EquipAction;
+import net.giantgames.replay.session.object.PacketEntity;
+import net.giantgames.replay.session.recorder.AbstractRecorder;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerItemHeldEvent;
+
+public class PlayerItemHeldListener implements Listener {
+
+    @EventHandler
+    private void onCall(PlayerItemHeldEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
+
+        ReplayPlugin replayPlugin = ReplayPlugin.getInstance();
+        if (replayPlugin.getCurrentRecordingSession() == null) {
+            return;
+        }
+
+        AbstractRecorder recorder = replayPlugin.getCurrentRecordingSession().getRecorder(event.getPlayer().getUniqueId());
+        if (recorder != null) {
+            recorder.getFrameBuilder().add(new EquipAction(PacketEntity.Slot.HAND,
+                    event.getPlayer().getInventory().getItem(event.getPreviousSlot()),
+                    event.getPlayer().getInventory().getItem(event.getNewSlot())));
+        }
+    }
+
+}

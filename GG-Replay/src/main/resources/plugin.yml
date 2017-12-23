@@ -2,6 +2,7 @@ main: net.giantgames.replay.ReplayPlugin
 name: ReplaySystem
 author: Veraty
 version: 1.0-SNAPSHOT
+depend: [ProtocolLib,PacketWrapper]
 
 commands:
 

@@ -40,21 +40,17 @@ public class SerializeReplayObject implements Serializable {
         }
     }
 
-    public IReplayObject convert() {
+    public IReplayObject convert(PacketWorld packetWorld) {
         if (entityType == -1) {
-            World world = Bukkit.getWorld(name);
-            if (world == null) {
-                world = Bukkit.getWorlds().get(0);
-            }
-            return new PacketWorld(world);
+            return packetWorld;
         }
 
         if (entityType == EntityType.PLAYER.getTypeId()) {
-            return new PacketPlayer(Bukkit.getWorlds().get(0).getSpawnLocation(), gameProfile.convert());
+            return new PacketPlayer(packetWorld, Bukkit.getWorlds().get(0).getSpawnLocation(), gameProfile.convert());
         }
 
         UUID uuid = name == null ? UUID.randomUUID() : UUID.fromString(name);
-        return new PacketEntity(Bukkit.getWorlds().get(0).getSpawnLocation(), uuid, EntityType.fromId(entityType));
+        return new PacketEntity(packetWorld, Bukkit.getWorlds().get(0).getSpawnLocation(), uuid, EntityType.fromId(entityType));
     }
 
 }

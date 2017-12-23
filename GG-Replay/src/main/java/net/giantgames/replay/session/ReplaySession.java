@@ -2,7 +2,11 @@ package net.giantgames.replay.session;
 
 import lombok.Getter;
 import lombok.Setter;
+import net.giantgames.replay.ReplayPlugin;
+import net.giantgames.replay.session.object.PacketWorld;
 import net.giantgames.replay.session.recorder.result.ServerRecording;
+
+import javax.swing.plaf.synth.SynthTextAreaUI;
 
 @Getter
 @Setter
@@ -29,7 +33,18 @@ public class ReplaySession {
         this.running = true;
 
         new Thread(() -> {
-            update();
+            recording.prepare(new PacketWorld(recording.getBukkitWorld()));
+
+            long lastUpdate = 0;
+            for (; ; ) {
+                if (System.currentTimeMillis() - lastUpdate > Math.abs(velocity) * ReplayPlugin.UPDATE_INTERVAL) {
+                    if (stopRequested) {
+                        break;
+                    }
+                    update();
+                    lastUpdate = System.currentTimeMillis();
+                }
+            }
         }).start();
     }
 
@@ -40,7 +55,7 @@ public class ReplaySession {
 
         recording.play(frame, velocity);
 
-        frame += velocity;
+        frame += velocity > 0 ? 1 : -1;
         keep();
     }
 

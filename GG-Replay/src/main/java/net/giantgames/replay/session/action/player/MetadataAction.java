@@ -11,12 +11,27 @@ import java.io.Serializable;
 @Getter
 public class MetadataAction<E extends PacketEntity> implements IAction<E> {
 
-    private final int index;
-    private final Serializable value;
+    private final Type type;
+    private final boolean flag;
 
     @Override
     public void apply(int velocity, E object) {
-        object.getDataWatcher().setObject(index, value);
-        object.updateMetadata();
+        byte id = object.getDataWatcher().getByte(0);
+        if (flag) {
+            object.getDataWatcher().setObject(id, (byte) (id | 1 << type.getIndex()));
+        } else {
+            object.getDataWatcher().setObject(id, (byte) (id & ~(1 << type.getIndex())));
+        }
     }
+
+    @Getter
+    @AllArgsConstructor
+    public enum Type implements Serializable {
+
+        SNEAK(1),
+        SPRINT(3);
+
+        private final int index;
+    }
+
 }

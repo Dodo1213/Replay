@@ -3,6 +3,8 @@ package net.giantgames.replay.session.recorder;
 import lombok.Getter;
 import net.giantgames.replay.serialize.SerializeLocation;
 import net.giantgames.replay.serialize.SerializeReplayObject;
+import net.giantgames.replay.session.action.entity.RemoveAction;
+import net.giantgames.replay.session.action.entity.SpawnAction;
 import net.giantgames.replay.session.recorder.result.Recording;
 import net.giantgames.replay.session.action.entity.MoveAction;
 import net.giantgames.replay.session.frame.Frame;
@@ -20,7 +22,8 @@ public class EntityRecorder<E extends Entity, T extends PacketEntity> extends Ab
 
     public EntityRecorder(E entity) {
         this.entity = entity;
-        lastLocation = entity.getLocation();
+        this.lastLocation = entity.getLocation();
+        this.frameBuilder.add(new SpawnAction<>());
     }
 
     @Override
@@ -44,5 +47,11 @@ public class EntityRecorder<E extends Entity, T extends PacketEntity> extends Ab
     @Override
     public Recording finish() {
         return new Recording(startFrame, new SerializeReplayObject(entity.getUniqueId().toString(), entity.getType().getTypeId(), null), frames);
+    }
+
+    @Override
+    public synchronized void stop() {
+        this.frameBuilder.add(new RemoveAction<>());
+        super.stop();
     }
 }

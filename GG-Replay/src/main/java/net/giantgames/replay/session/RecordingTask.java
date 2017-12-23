@@ -15,6 +15,7 @@ public class RecordingTask implements Runnable {
 
     private final RecordingSession session;
     private final long period;
+    private final SessionProfile profile;
     private final Consumer<ServerRecording> recordingConsumer;
 
     @Override
@@ -34,13 +35,13 @@ public class RecordingTask implements Runnable {
             }
         }
 
-        Collection<Recording> recordings = session.getPacketWorld().finishAll();
+        Collection<Recording> recordings = session.finishAll();
         recordings.add(worldRecorder.finish());
-        recordingConsumer.accept(new ServerRecording(recordings));
+        recordingConsumer.accept(new ServerRecording(session.getProfile(), session.getPacketWorld().getWorld().getName(), recordings));
     }
 
     public void tick(int frame, WorldRecorder worldRecorder) {
         worldRecorder.update(frame);
-        session.getPacketWorld().updateAll(frame);
+        session.updateAll(frame);
     }
 }

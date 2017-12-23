@@ -19,9 +19,11 @@ public final class PacketPlayer extends PacketEntity {
 
     private final WrappedGameProfile profile;
 
-    public PacketPlayer(Location location, WrappedGameProfile profile) {
-        super(profile.getUUID(), location);
+
+    public PacketPlayer(PacketWorld packetWorld, Location location, WrappedGameProfile profile) {
+        super(packetWorld, profile.getUUID(), location);
         this.profile = profile;
+
 
         this.dataWatcher.setObject(6, Float.valueOf(20));
         this.dataWatcher.setObject(10, Byte.valueOf((byte) 127));

@@ -11,64 +11,43 @@ import com.comphenix.protocol.wrappers.WrappedBlockData;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import lombok.Getter;
 import net.giantgames.replay.serialize.SerializeBlockChange;
-import net.giantgames.replay.session.recorder.result.Recording;
-import net.giantgames.replay.session.recorder.EntityRecorder;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Entity;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 
 @Getter
 public class PacketWorld implements IReplayObject {
 
     private final World world;
     private final Multimap<ChunkCoordIntPair, SerializeBlockChange> blockChanges;
-    private final Map<PacketEntity, EntityRecorder<? extends Entity, ? extends PacketEntity>> spawnedEntities;
+    private final Collection<PacketEntity> spawnedEntities;
     private final Collection<PacketPlayer> packetPlayers;
 
     public PacketWorld(World world) {
         this.blockChanges = Multimaps.synchronizedMultimap(HashMultimap.create());
-        this.spawnedEntities = Collections.synchronizedMap(new Object2ObjectOpenHashMap());
+        this.spawnedEntities = Collections.synchronizedList(new LinkedList<>());
         this.packetPlayers = Collections.synchronizedList(new LinkedList<>());
         this.world = world;
     }
 
-    public Collection<Recording> finishAll() {
-        Collection<Recording> recordings = new LinkedList<>();
-        spawnedEntities.values().forEach((entities) -> {
-            recordings.add(entities.finish());
-        });
-        return recordings;
-    }
+    public void add(PacketEntity packetEntity) {
+        if (packetEntity instanceof PacketPlayer) {
+            this.packetPlayers.add((PacketPlayer) packetEntity);
+        }
 
-    public void updateAll(int frame) {
-        spawnedEntities.values().forEach((entities) -> {
-            entities.update(frame);
-        });
+        this.spawnedEntities.add(packetEntity);
     }
 
     public void remove(PacketEntity packetEntity) {
-        if (spawnedEntities.containsKey(packetEntity)) {
-            spawnedEntities.remove(packetEntity);
-        }
-    }
-
-    public <E extends Entity, T extends PacketEntity> void record(T packetEntity, EntityRecorder<E, T> recorder) {
-        if (!spawnedEntities.containsKey(packetEntity)) {
-            spawnedEntities.put(packetEntity, recorder);
-        }
-
-        if (packetEntity instanceof PacketPlayer) {
-            if (!packetPlayers.contains(packetEntity)) {
-                packetPlayers.add((PacketPlayer) packetEntity);
-            }
-        }
+        spawnedEntities.remove(packetEntity);
+        packetPlayers.remove(packetEntity);
     }
 
     public void multiBlockChange(Collection<SerializeBlockChange> changes, int velocity) {
@@ -119,7 +98,7 @@ public class PacketWorld implements IReplayObject {
             containers.add(multiBlockChange.getHandle());
         }
 
-        spawnedEntities.keySet().forEach(spawnedEntities -> {
+        spawnedEntities.forEach(spawnedEntities -> {
             PacketContainer[] entityContainer = spawnedEntities.send();
             for (int j = 0; j < entityContainer.length; j++) {
                 containers.add(entityContainer[j]);
@@ -150,7 +129,7 @@ public class PacketWorld implements IReplayObject {
             containers.add(multiBlockChange.getHandle());
         }
 
-        spawnedEntities.keySet().forEach(spawnedEntities -> {
+        spawnedEntities.forEach(spawnedEntities -> {
             PacketContainer[] entityContainer = spawnedEntities.remove();
             for (int j = 0; j < entityContainer.length; j++) {
                 containers.add(entityContainer[j]);

@@ -20,27 +20,29 @@ public class PacketEntity implements IReplayObject {
     protected final int entityId;
     protected final UUID uniqueId;
     protected final ItemStack[] equipment;
+    protected final PacketWorld packetWorld;
     protected WrappedDataWatcher dataWatcher;
 
     protected Location location;
     protected EntityType entityType;
 
 
-    public PacketEntity(Location location) {
-        this(UUID.randomUUID(), location);
+    public PacketEntity(PacketWorld packetWorld, Location location) {
+        this(packetWorld, UUID.randomUUID(), location);
     }
 
-    public PacketEntity(UUID uuid, Location location) {
-        this(location, uuid, EntityType.UNKNOWN);
+    public PacketEntity(PacketWorld packetWorld, UUID uuid, Location location) {
+        this(packetWorld, location, uuid, EntityType.UNKNOWN);
     }
 
-    public PacketEntity(Location location, UUID uuid, EntityType entityType) {
+    public PacketEntity(PacketWorld packetWorld, Location location, UUID uuid, EntityType entityType) {
         this.entityId = (int) Math.random() * 1000;
         this.equipment = new ItemStack[Slot.values().length];
         this.entityType = entityType;
         this.location = location;
         this.uniqueId = uuid;
         this.dataWatcher = new WrappedDataWatcher();
+        this.packetWorld = packetWorld;
     }
 
     @Override
@@ -55,6 +57,7 @@ public class PacketEntity implements IReplayObject {
         playServerSpawnEntity.setUniqueId(uniqueId);
         playServerSpawnEntity.setEntityID(entityId);
 
+        packetWorld.add(this);
         return new PacketContainer[]{playServerSpawnEntity.getHandle()};
     }
 
@@ -62,6 +65,8 @@ public class PacketEntity implements IReplayObject {
     public PacketContainer[] remove() {
         WrapperPlayServerEntityDestroy playServerEntityDestroy = new WrapperPlayServerEntityDestroy();
         playServerEntityDestroy.setEntityIds(new int[]{entityId});
+
+        packetWorld.remove(this);
         return new PacketContainer[]{playServerEntityDestroy.getHandle()};
     }
 
@@ -149,6 +154,19 @@ public class PacketEntity implements IReplayObject {
 
         public EnumWrappers.ItemSlot getItemSlot() {
             return EnumWrappers.ItemSlot.values()[slotId];
+        }
+
+        public static Slot fromArmorSlot(int slot) {
+            switch (slot) {
+                case 0:
+                    return HELMET;
+                case 1:
+                    return CHESTPLATE;
+                case 2:
+                    return LEGGINGS;
+                default:
+                    return BOOTS;
+            }
         }
     }
 

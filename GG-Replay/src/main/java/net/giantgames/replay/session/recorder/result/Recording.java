@@ -4,6 +4,7 @@ import lombok.Getter;
 import net.giantgames.replay.serialize.SerializeReplayObject;
 import net.giantgames.replay.session.frame.Frame;
 import net.giantgames.replay.session.object.IReplayObject;
+import net.giantgames.replay.session.object.PacketWorld;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -28,9 +29,9 @@ public class Recording implements Serializable {
         this.serializeReplayObject = replayObject;
     }
 
-    public void prepare() {
+    public void prepare(PacketWorld packetWorld) {
         if (replayObject == null) {
-            replayObject = serializeReplayObject.convert();
+            replayObject = serializeReplayObject.convert(packetWorld);
         }
     }
 
