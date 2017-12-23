@@ -1,0 +1,41 @@
+package net.giantgames.replay.session.recorder;
+
+import lombok.Getter;
+import net.giantgames.replay.serialize.SerializeLocation;
+import net.giantgames.replay.session.action.entity.MoveAction;
+import net.giantgames.replay.session.frame.Frame;
+import net.giantgames.replay.session.object.PacketEntity;
+import org.bukkit.Location;
+import org.bukkit.entity.Entity;
+
+@Getter
+public class EntityRecorder<E extends Entity, T extends PacketEntity> extends AbstractRecorder<T> {
+
+    protected static final float MIN_DISTANCE = 0.2f;
+
+    protected E entity;
+    protected Location lastLocation;
+
+    public EntityRecorder(E entity) {
+        this.entity = entity;
+        lastLocation = entity.getLocation();
+    }
+
+    @Override
+    public Frame<T> snap() {
+
+        if (entity.isDead()) {
+            return frameBuilder.buildAndClear();
+        }
+
+        Location location = entity.getLocation();
+        if (lastLocation != null) {
+            if (location.distanceSquared(lastLocation) > MIN_DISTANCE || location.getYaw() != lastLocation.getYaw() || location.getPitch() != lastLocation.getPitch()) {
+                frameBuilder.add(new MoveAction<T>(SerializeLocation.from(lastLocation), SerializeLocation.from(location)));
+            }
+        }
+
+        lastLocation = location;
+        return frameBuilder.buildAndClear();
+    }
+}

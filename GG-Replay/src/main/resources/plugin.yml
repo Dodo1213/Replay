@@ -1,0 +1,11 @@
+main: net.giantgames.replay.ReplayPlugin
+name: ReplaySystem
+author: Veraty
+version: 1.0-SNAPSHOT
+
+commands:
+
+  replay:
+    description: Replay Command
+    default: op
+    usage: replay [record,finish,play,stop,list,play]
