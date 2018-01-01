@@ -22,7 +22,7 @@ public class SerializeReplayObject implements Serializable {
     private SerializeGameProfile gameProfile;
 
     public SerializeReplayObject(IReplayObject replayObject) {
-        this.entityType = -1;
+        this.entityType = -2;
         this.gameProfile = null;
         this.name = "";
 
@@ -41,16 +41,22 @@ public class SerializeReplayObject implements Serializable {
     }
 
     public IReplayObject convert(PacketWorld packetWorld) {
-        if (entityType == -1) {
+        if (entityType == -2) {
             return packetWorld;
         }
 
-        if (entityType == EntityType.PLAYER.getTypeId()) {
+        if (gameProfile != null) {
             return new PacketPlayer(packetWorld, Bukkit.getWorlds().get(0).getSpawnLocation(), gameProfile.convert());
         }
 
-        UUID uuid = name == null ? UUID.randomUUID() : UUID.fromString(name);
+        UUID uuid = null;
+        try {
+            uuid = UUID.fromString(name);
+        } catch (Exception exception) {
+            uuid = UUID.randomUUID();
+
+        }
+
         return new PacketEntity(packetWorld, Bukkit.getWorlds().get(0).getSpawnLocation(), uuid, EntityType.fromId(entityType));
     }
-
 }

@@ -11,7 +11,7 @@ import org.bukkit.event.player.PlayerItemHeldEvent;
 public class PlayerItemHeldListener implements Listener {
 
     @EventHandler
-    private void onCall(PlayerItemHeldEvent event) {
+    public void onCall(PlayerItemHeldEvent event) {
         if (event.isCancelled()) {
             return;
         }

@@ -10,9 +10,9 @@ public class SpawnAction<E extends PacketEntity> implements IAction<E> {
     @Override
     public void apply(int velocity, E object) {
         if (velocity > 0) {
-            object.send();
+            object.sendAll();
         } else {
-            object.remove();
+            object.removeAll();
         }
     }
 

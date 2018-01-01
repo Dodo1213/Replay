@@ -9,7 +9,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 public class PlayerJoinListener implements Listener {
 
     @EventHandler
-    private void onCall(PlayerJoinEvent event) {
+    public void onCall(PlayerJoinEvent event) {
         ReplayPlugin replayPlugin = ReplayPlugin.getInstance();
         if (replayPlugin.getCurrentRecordingSession() == null) {
             return;

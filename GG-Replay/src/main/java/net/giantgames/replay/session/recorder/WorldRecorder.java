@@ -27,6 +27,6 @@ public class WorldRecorder extends AbstractRecorder<IReplayObject> {
 
     @Override
     public Recording finish() {
-        return new Recording(startFrame, new SerializeReplayObject(packetWorld.getWorld().getName(), 0, null), frames);
+        return new Recording(startFrame, new SerializeReplayObject(packetWorld.getWorld().getName(), -2, null), frames);
     }
 }

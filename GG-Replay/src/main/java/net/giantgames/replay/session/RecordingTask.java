@@ -14,6 +14,7 @@ import java.util.function.Consumer;
 public class RecordingTask implements Runnable {
 
     private final RecordingSession session;
+    private final WorldRecorder worldRecorder;
     private final long period;
     private final SessionProfile profile;
     private final Consumer<ServerRecording> recordingConsumer;
@@ -22,7 +23,6 @@ public class RecordingTask implements Runnable {
     public void run() {
         long lastTick = 0;
 
-        WorldRecorder worldRecorder = new WorldRecorder(session.getPacketWorld());
         int frame = 0;
         for (; ; ) {
             if (System.currentTimeMillis() - lastTick > period) {

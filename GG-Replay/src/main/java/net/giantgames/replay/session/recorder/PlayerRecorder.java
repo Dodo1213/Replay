@@ -59,6 +59,6 @@ public class PlayerRecorder extends EntityRecorder<Player, PacketPlayer> {
 
     @Override
     public Recording finish() {
-        return new Recording(startFrame, new SerializeReplayObject(entity.getUniqueId().toString(), entity.getType().getTypeId(), new SerializeGameProfile(entity)), frames);
+        return new Recording(startFrame, new SerializeReplayObject(entity.getUniqueId().toString(), 10, new SerializeGameProfile(entity)), frames);
     }
 }

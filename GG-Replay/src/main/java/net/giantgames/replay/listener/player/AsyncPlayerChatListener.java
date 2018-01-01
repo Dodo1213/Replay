@@ -12,7 +12,7 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 public class AsyncPlayerChatListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    private void onCall(AsyncPlayerChatEvent event) {
+    public void onCall(AsyncPlayerChatEvent event) {
 
         if (event.isCancelled()) {
             return;

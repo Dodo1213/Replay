@@ -10,7 +10,7 @@ import org.bukkit.event.player.PlayerToggleSprintEvent;
 public class PlayerToggleSprintListener implements Listener {
 
     @EventHandler
-    private void onCall(PlayerToggleSprintEvent event) {
+    public void onCall(PlayerToggleSprintEvent event) {
 
         if (event.isCancelled()) {
             return;

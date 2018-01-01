@@ -8,9 +8,9 @@ public class RemoveAction<E extends PacketEntity> implements IAction<E> {
     @Override
     public void apply(int velocity, E object) {
         if (velocity > 0) {
-            object.remove();
+            object.removeAll();
         } else {
-            object.send();
+            object.sendAll();
         }
     }
 

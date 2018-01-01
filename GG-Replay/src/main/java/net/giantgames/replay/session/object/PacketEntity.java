@@ -1,18 +1,22 @@
 package net.giantgames.replay.session.object;
 
-import com.comphenix.packetwrapper.*;
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Getter
 public class PacketEntity implements IReplayObject {
@@ -21,7 +25,7 @@ public class PacketEntity implements IReplayObject {
     protected final UUID uniqueId;
     protected final ItemStack[] equipment;
     protected final PacketWorld packetWorld;
-    protected WrappedDataWatcher dataWatcher;
+    protected final WrappedDataWatcher dataWatcher;
 
     protected Location location;
     protected EntityType entityType;
@@ -36,7 +40,7 @@ public class PacketEntity implements IReplayObject {
     }
 
     public PacketEntity(PacketWorld packetWorld, Location location, UUID uuid, EntityType entityType) {
-        this.entityId = (int) Math.random() * 1000;
+        this.entityId = ThreadLocalRandom.current().nextInt(1000) + 3000;
         this.equipment = new ItemStack[Slot.values().length];
         this.entityType = entityType;
         this.location = location;
@@ -47,97 +51,106 @@ public class PacketEntity implements IReplayObject {
 
     @Override
     public PacketContainer[] send() {
-        WrapperPlayServerSpawnEntity playServerSpawnEntity = new WrapperPlayServerSpawnEntity();
-        playServerSpawnEntity.setType(entityType.getTypeId());
-        playServerSpawnEntity.setYaw(location.getYaw());
-        playServerSpawnEntity.setPitch(location.getPitch());
-        playServerSpawnEntity.setX(location.getX());
-        playServerSpawnEntity.setY(location.getY());
-        playServerSpawnEntity.setZ(location.getZ());
-        playServerSpawnEntity.setUniqueId(uniqueId);
-        playServerSpawnEntity.setEntityID(entityId);
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY);
+        packetContainer.getIntegers().write(0, entityId);
+        packetContainer.getIntegers().write(1, (int) location.getX() * 32);
+        packetContainer.getIntegers().write(2, (int) location.getY() * 32);
+        packetContainer.getIntegers().write(3, (int) location.getZ() * 32);
+        packetContainer.getIntegers().write(4, (int) (location.getYaw() * 256.0F / 360.0F));
+        packetContainer.getIntegers().write(5, (int) (location.getPitch() * 256.0F / 360.0F));
 
         packetWorld.add(this);
-        return new PacketContainer[]{playServerSpawnEntity.getHandle()};
+        return new PacketContainer[]{packetContainer};
     }
 
     @Override
     public PacketContainer[] remove() {
-        WrapperPlayServerEntityDestroy playServerEntityDestroy = new WrapperPlayServerEntityDestroy();
-        playServerEntityDestroy.setEntityIds(new int[]{entityId});
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_DESTROY);
+        packetContainer.getIntegerArrays().write(0, new int[]{entityId});
 
         packetWorld.remove(this);
-        return new PacketContainer[]{playServerEntityDestroy.getHandle()};
+        return new PacketContainer[]{packetContainer};
     }
 
     public void teleport(Location location) {
         this.location = location;
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_TELEPORT);
+        packetContainer.getIntegers().write(0, entityId);
+        packetContainer.getIntegers().write(1, (int) location.getX() * 32);
+        packetContainer.getIntegers().write(2, (int) location.getY() * 32);
+        packetContainer.getIntegers().write(3, (int) location.getZ() * 32);
+        packetContainer.getBytes().write(0, (byte) (location.getYaw() * 256.0F / 360.0F));
+        packetContainer.getBytes().write(1, (byte) (location.getPitch() * 256.0F / 360.0F));
+        packetContainer.getBooleans().write(0, true);
 
-        WrapperPlayServerEntityTeleport playServerEntityTeleport = new WrapperPlayServerEntityTeleport();
-        playServerEntityTeleport.setEntityID(entityId);
-        playServerEntityTeleport.setOnGround(true);
-        playServerEntityTeleport.setX(location.getX());
-        playServerEntityTeleport.setY(location.getY());
-        playServerEntityTeleport.setZ(location.getZ());
-        playServerEntityTeleport.setYaw(location.getYaw());
-        playServerEntityTeleport.setPitch(location.getPitch());
+        broadcast(packetContainer);
 
         rotate(location.getYaw(), location.getPitch());
     }
 
     public void rotate(float yaw, float pitch) {
-        WrapperPlayServerEntityLook playServerEntityLook = new WrapperPlayServerEntityLook();
-        playServerEntityLook.setEntityID(entityId);
-        playServerEntityLook.setYaw(yaw);
-        playServerEntityLook.setPitch(pitch);
-        playServerEntityLook.setOnGround(true);
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_LOOK);
+        packetContainer.getIntegers().write(0, entityId);
+        packetContainer.getBytes().write(1, (byte) (yaw * 256.0F / 360.0F));
+        packetContainer.getBytes().write(2, (byte) (pitch * 256.0F / 360.0F));
+        packetContainer.getBooleans().write(0, true);
 
-        WrapperPlayServerEntityHeadRotation playServerEntityHeadRotation = new WrapperPlayServerEntityHeadRotation();
-        playServerEntityHeadRotation.setEntityID(entityId);
-        playServerEntityHeadRotation.setHeadYaw((byte) ((int) (yaw * 256.0F / 360.0F)));
-
-        ProtocolLibrary.getProtocolManager().broadcastServerPacket(playServerEntityLook.getHandle());
-        ProtocolLibrary.getProtocolManager().broadcastServerPacket(playServerEntityHeadRotation.getHandle());
+        PacketContainer container = new PacketContainer(PacketType.Play.Server.ENTITY_HEAD_ROTATION);
+        container.getIntegers().write(0, entityId);
+        container.getBytes().write(0, (byte) ((int) (yaw * 256.0F / 360.0F)));
+        broadcast(packetContainer, container);
     }
 
 
     public void animate(Animation animation) {
-        WrapperPlayServerAnimation playServerAnimation = new WrapperPlayServerAnimation();
-        playServerAnimation.setEntityID(entityId);
-        playServerAnimation.setAnimation(animation.ordinal());
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ANIMATION);
+        packetContainer.getIntegers().write(0, entityId);
+        packetContainer.getIntegers().write(1, animation.ordinal());
 
-        ProtocolLibrary.getProtocolManager().broadcastServerPacket(playServerAnimation.getHandle());
+        broadcast(packetContainer);
     }
 
     public void status(Status status) {
-        WrapperPlayServerEntityStatus playServerEntityStatus = new WrapperPlayServerEntityStatus();
-        playServerEntityStatus.setEntityID(entityId);
-        playServerEntityStatus.setEntityStatus(status.getStatus());
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_STATUS);
+        packetContainer.getIntegers().write(0, entityId);
+        packetContainer.getBytes().write(0, status.getStatus());
 
-        ProtocolLibrary.getProtocolManager().broadcastServerPacket(playServerEntityStatus.getHandle());
+        broadcast(packetContainer);
     }
 
     public void equip(Slot slot, ItemStack itemStack) {
         equipment[slot.ordinal()] = itemStack;
 
-        WrapperPlayServerEntityEquipment entityEquipment = new WrapperPlayServerEntityEquipment();
-        entityEquipment.setEntityID(entityId);
-        entityEquipment.setItem(itemStack);
-        entityEquipment.setSlot(slot.getItemSlot());
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_EQUIPMENT);
+        packetContainer.getIntegers().write(0, entityId);
+        packetContainer.getItemSlots().write(0, slot.getItemSlot());
+        packetContainer.getItemModifier().write(0, itemStack);
 
-        ProtocolLibrary.getProtocolManager().broadcastServerPacket(entityEquipment.getHandle());
+        broadcast(packetContainer);
     }
 
     public void updateMetadata() {
-        WrapperPlayServerEntityMetadata playServerEntityMetadata = new WrapperPlayServerEntityMetadata();
-        playServerEntityMetadata.setMetadata(dataWatcher.getWatchableObjects());
-        playServerEntityMetadata.setEntityID(entityId);
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_METADATA);
+        packetContainer.getWatchableCollectionModifier().write(0, dataWatcher.getWatchableObjects());
+        packetContainer.getIntegers().write(0, entityId);
 
-        ProtocolLibrary.getProtocolManager().broadcastServerPacket(playServerEntityMetadata.getHandle());
+        broadcast(packetContainer);
     }
 
     public ItemStack getEquipment(Slot slot) {
         return equipment[slot.ordinal()];
+    }
+
+    protected void broadcast(PacketContainer... packets) {
+        for (int i = 0; i < packets.length; i++) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                try {
+                    ProtocolLibrary.getProtocolManager().sendServerPacket(player, packets[i]);
+                } catch (InvocationTargetException exception) {
+                    exception.printStackTrace();
+                }
+            }
+        }
     }
 
     @Getter

@@ -18,12 +18,17 @@ public final class Frame<E extends IReplayObject> implements Serializable {
         this.actions = actions;
     }
 
-    public Frame(Collection<IAction<E>> actionCollection) {
-        this.actions = actionCollection.toArray(new IAction[0]);
+    public Frame(Queue<IAction<E>> actions) {
+        this.actions = new IAction[actions.size()];
+        int i = 0;
+        while (!actions.isEmpty()) {
+            this.actions[i++] = actions.remove();
+        }
     }
 
     public void play(E replayObject, int velocity) {
         for (int i = 0; i < actions.length; i++) {
+            System.out.printf("%s%n", actions[i].getClass().getSimpleName());
             actions[i].apply(velocity, replayObject);
         }
     }

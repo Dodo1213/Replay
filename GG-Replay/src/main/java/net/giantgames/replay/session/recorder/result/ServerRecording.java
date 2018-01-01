@@ -1,5 +1,6 @@
 package net.giantgames.replay.session.recorder.result;
 
+import lombok.Getter;
 import net.giantgames.replay.session.SessionProfile;
 import net.giantgames.replay.session.action.IAction;
 import net.giantgames.replay.session.frame.Frame;
@@ -11,6 +12,7 @@ import org.bukkit.World;
 import java.io.Serializable;
 import java.util.Collection;
 
+@Getter
 public class ServerRecording implements Serializable {
 
     private final SessionProfile profile;
@@ -39,11 +41,7 @@ public class ServerRecording implements Serializable {
 
     public void play(int frameId, int velocity) {
         for (Recording recording : recordings) {
-            for (Frame<IReplayObject> frame : recording.getFrames()) {
-                for (IAction<IReplayObject> action : frame.getActions()) {
-                    action.apply(velocity, recording.getReplayObject());
-                }
-            }
+            recording.play(frameId, velocity);
         }
     }
 

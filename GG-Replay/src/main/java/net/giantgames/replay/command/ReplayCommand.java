@@ -55,6 +55,7 @@ public class ReplayCommand implements CommandExecutor, TabCompleter {
 
                 RecordingSession recordingSession = new SessionBuilder()
                         .inWorld(((Player) commandSender).getWorld())
+                        .withGameId(strings[1])
                         .build();
 
                 recordingSession.start();

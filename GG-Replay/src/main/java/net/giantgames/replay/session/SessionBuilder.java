@@ -24,7 +24,7 @@ public class SessionBuilder {
     }
 
     public SessionBuilder withGameId(String gameId) {
-        this.game = gameId;
+        this.gameId = gameId;
         return this;
     }
 

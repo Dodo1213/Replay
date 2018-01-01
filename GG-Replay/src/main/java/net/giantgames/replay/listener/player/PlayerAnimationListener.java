@@ -12,7 +12,7 @@ import org.bukkit.event.player.PlayerAnimationEvent;
 public class PlayerAnimationListener implements Listener {
 
     @EventHandler
-    private void onCall(PlayerAnimationEvent event) {
+    public void onCall(PlayerAnimationEvent event) {
 
         if (event.isCancelled()) {
             return;

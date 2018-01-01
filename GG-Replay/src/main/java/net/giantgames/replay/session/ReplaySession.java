@@ -33,7 +33,10 @@ public class ReplaySession {
         this.running = true;
 
         new Thread(() -> {
-            recording.prepare(new PacketWorld(recording.getBukkitWorld()));
+            PacketWorld packetWorld = new PacketWorld(recording.getBukkitWorld());
+            recording.prepare(packetWorld);
+
+            packetWorld.sendAll();
 
             long lastUpdate = 0;
             for (; ; ) {
@@ -45,6 +48,9 @@ public class ReplaySession {
                     lastUpdate = System.currentTimeMillis();
                 }
             }
+
+            packetWorld.removeAll();
+
         }).start();
     }
 
@@ -57,6 +63,7 @@ public class ReplaySession {
 
         frame += velocity > 0 ? 1 : -1;
         keep();
+        System.out.println(frame);
     }
 
     public void shiftBackwards(int units) {

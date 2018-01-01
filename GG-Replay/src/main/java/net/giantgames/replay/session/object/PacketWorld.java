@@ -1,7 +1,6 @@
 package net.giantgames.replay.session.object;
 
-import com.comphenix.packetwrapper.WrapperPlayServerBlockChange;
-import com.comphenix.packetwrapper.WrapperPlayServerMultiBlockChange;
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.BlockPosition;
@@ -62,12 +61,11 @@ public class PacketWorld implements IReplayObject {
         }
 
         for (ChunkCoordIntPair chunkCoordIntPair : datas.keys()) {
+            PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.MULTI_BLOCK_CHANGE);
+            packetContainer.getMultiBlockChangeInfoArrays().write(0, datas.get(chunkCoordIntPair).toArray(new MultiBlockChangeInfo[0]));
+            packetContainer.getChunkCoordIntPairs().write(0, chunkCoordIntPair);
 
-            WrapperPlayServerMultiBlockChange multiBlockChange = new WrapperPlayServerMultiBlockChange();
-            multiBlockChange.setRecords(datas.get(chunkCoordIntPair).toArray(new MultiBlockChangeInfo[0]));
-            multiBlockChange.setChunk(chunkCoordIntPair);
-
-            ProtocolLibrary.getProtocolManager().broadcastServerPacket(multiBlockChange.getHandle());
+            ProtocolLibrary.getProtocolManager().broadcastServerPacket(packetContainer);
         }
     }
 
@@ -78,11 +76,11 @@ public class PacketWorld implements IReplayObject {
 
         this.blockChanges.put(new ChunkCoordIntPair(chunk.getX(), chunk.getZ()), blockChange);
 
-        WrapperPlayServerBlockChange playServerBlockChange = new WrapperPlayServerBlockChange();
-        playServerBlockChange.setBlockData(velocity > 0 ? blockChange.getTo().convert() : blockChange.getFrom().convert());
-        playServerBlockChange.setLocation(new BlockPosition(location.toVector()));
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.BLOCK_CHANGE);
+        packetContainer.getBlockData().write(0, velocity > 0 ? blockChange.getTo().convert() : blockChange.getFrom().convert());
+        packetContainer.getBlockPositionModifier().write(0, new BlockPosition(location.toVector()));
 
-        ProtocolLibrary.getProtocolManager().broadcastServerPacket(playServerBlockChange.getHandle());
+        ProtocolLibrary.getProtocolManager().broadcastServerPacket(packetContainer);
     }
 
     @Override
@@ -90,12 +88,11 @@ public class PacketWorld implements IReplayObject {
         LinkedList<PacketContainer> containers = new LinkedList<>();
 
         for (ChunkCoordIntPair chunkCoordIntPair : blockChanges.keys()) {
+            PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.MULTI_BLOCK_CHANGE);
+            packetContainer.getMultiBlockChangeInfoArrays().write(0, blockChanges.get(chunkCoordIntPair).toArray(new MultiBlockChangeInfo[0]));
+            packetContainer.getChunkCoordIntPairs().write(0, chunkCoordIntPair);
 
-            WrapperPlayServerMultiBlockChange multiBlockChange = new WrapperPlayServerMultiBlockChange();
-            multiBlockChange.setRecords(blockChanges.get(chunkCoordIntPair).toArray(new MultiBlockChangeInfo[0]));
-            multiBlockChange.setChunk(chunkCoordIntPair);
-
-            containers.add(multiBlockChange.getHandle());
+            ProtocolLibrary.getProtocolManager().broadcastServerPacket(packetContainer);
         }
 
         spawnedEntities.forEach(spawnedEntities -> {
@@ -114,8 +111,9 @@ public class PacketWorld implements IReplayObject {
 
         for (ChunkCoordIntPair chunkCoordIntPair : blockChanges.keys()) {
 
-            WrapperPlayServerMultiBlockChange multiBlockChange = new WrapperPlayServerMultiBlockChange();
+            PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.MULTI_BLOCK_CHANGE);
             Collection<SerializeBlockChange> serializeBlockChanges = blockChanges.get(chunkCoordIntPair);
+
             MultiBlockChangeInfo[] multiBlockChangeInfos = new MultiBlockChangeInfo[serializeBlockChanges.size()];
 
             int i = 0;
@@ -123,10 +121,10 @@ public class PacketWorld implements IReplayObject {
                 multiBlockChangeInfos[i++] = getRealBlock(serializeBlockChange.getVector().convert().toLocation(world));
             }
 
-            multiBlockChange.setRecords(multiBlockChangeInfos);
-            multiBlockChange.setChunk(chunkCoordIntPair);
+            packetContainer.getMultiBlockChangeInfoArrays().write(0, multiBlockChangeInfos);
+            packetContainer.getChunkCoordIntPairs().write(0, chunkCoordIntPair);
 
-            containers.add(multiBlockChange.getHandle());
+            containers.add(packetContainer);
         }
 
         spawnedEntities.forEach(spawnedEntities -> {

@@ -1,0 +1,30 @@
+package net.giantgames.replay.listener.block;
+
+import net.giantgames.replay.ReplayPlugin;
+import net.giantgames.replay.serialize.SerializeBlockChange;
+import net.giantgames.replay.session.action.world.BlockChangeAction;
+import net.giantgames.replay.session.recorder.AbstractRecorder;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
+
+public class BlockPlaceListener implements Listener {
+
+    @EventHandler
+    public void onCall(BlockPlaceEvent event) {
+        if (event.isCancelled()) {
+            return;
+        }
+
+        ReplayPlugin replayPlugin = ReplayPlugin.getInstance();
+        if (replayPlugin.getCurrentRecordingSession() == null) {
+            return;
+        }
+
+        AbstractRecorder recorder = replayPlugin.getCurrentRecordingSession().getWorldRecorder();
+        if (recorder != null) {
+            recorder.getFrameBuilder().add(new BlockChangeAction(new SerializeBlockChange(null, event.getBlock())));
+        }
+    }
+
+}

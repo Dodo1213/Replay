@@ -36,14 +36,16 @@ public class Recording implements Serializable {
     }
 
     public void play(int frame, int velocity) {
-        int realFrame = frame - startFrame;
-
-        if (realFrame < 0) {
-            return;
-        }
-
-        if (frames.length > realFrame) {
-            frames[realFrame].play(replayObject, velocity);
+        try {
+            int realFrame = frame - startFrame;
+            if (realFrame < 0) {
+                return;
+            }
+            if (frames.length > realFrame) {
+                frames[realFrame].play(replayObject, velocity);
+            }
+        } catch (Exception exception) {
+            exception.printStackTrace();
         }
     }
 

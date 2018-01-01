@@ -34,6 +34,7 @@ public abstract class AbstractRecorder<E extends IReplayObject> {
 
         if (!started) {
             startFrame = frame;
+            started = true;
         }
 
         this.frames.add(snap(frame));

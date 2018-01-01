@@ -10,7 +10,7 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 public class PlayerCommandPreprocessListener implements Listener {
 
     @EventHandler
-    private void onCall(PlayerCommandPreprocessEvent event) {
+    public void onCall(PlayerCommandPreprocessEvent event) {
 
 
         ReplayPlugin replayPlugin = ReplayPlugin.getInstance();

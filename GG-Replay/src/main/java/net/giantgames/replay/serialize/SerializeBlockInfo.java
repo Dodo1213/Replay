@@ -14,7 +14,13 @@ public class SerializeBlockInfo implements Serializable {
     private int id;
     private byte data;
 
-    private SerializeBlockInfo(Block block) {
+    public SerializeBlockInfo() {
+        this.id = 0;
+        this.data = 0;
+        this.state = null;
+    }
+
+    public SerializeBlockInfo(Block block) {
         this.id = block.getTypeId();
         this.data = block.getData();
         this.state = ISerializeBlockState.of(block);
@@ -34,5 +40,13 @@ public class SerializeBlockInfo implements Serializable {
 
     public WrappedBlockData convert() {
         return WrappedBlockData.createData(Material.getMaterial(id), data);
+    }
+
+
+    public static SerializeBlockInfo of(Block block) {
+        if (block == null) {
+            return new SerializeBlockInfo();
+        }
+        return new SerializeBlockInfo(block);
     }
 }

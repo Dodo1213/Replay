@@ -8,8 +8,10 @@ import net.giantgames.replay.session.object.PacketWorld;
 import net.giantgames.replay.session.recorder.AbstractRecorder;
 import net.giantgames.replay.session.recorder.EntityRecorder;
 import net.giantgames.replay.session.recorder.PlayerRecorder;
+import net.giantgames.replay.session.recorder.WorldRecorder;
 import net.giantgames.replay.session.recorder.result.Recording;
 import net.giantgames.replay.session.recorder.result.ServerRecording;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -21,6 +23,7 @@ import java.util.function.Consumer;
 public class RecordingSession {
 
     private final PacketWorld packetWorld;
+    private final WorldRecorder worldRecorder;
     private final Thread thread;
     private volatile boolean stopRequested;
     private volatile boolean running;
@@ -30,14 +33,22 @@ public class RecordingSession {
     public RecordingSession(SessionProfile profile, World world, long period) {
         this.profile = profile;
         this.packetWorld = new PacketWorld(world);
+        this.worldRecorder = new WorldRecorder(packetWorld);
         this.recorders = Collections.synchronizedMap(new THashMap<>());
-        this.thread = new Thread(new RecordingTask(this, period, profile, new Consumer<ServerRecording>() {
+        this.thread = new Thread(new RecordingTask(this, worldRecorder, period, profile, new Consumer<ServerRecording>() {
             @Override
             public void accept(ServerRecording recording) {
+
+                System.out.println("Now replaying: ".concat(recording.getProfile().getGameId()));
+
                 ReplaySession replaySession = new ReplaySession(recording);
                 replaySession.run();
             }
         }));
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            record(player);
+        }
     }
 
     public void stopRecord(UUID uuid) {

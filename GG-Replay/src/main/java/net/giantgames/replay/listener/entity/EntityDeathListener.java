@@ -11,7 +11,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 public class EntityDeathListener implements Listener {
 
     @EventHandler
-    private void onCall(EntityDeathEvent event) {
+    public void onCall(EntityDeathEvent event) {
 
         ReplayPlugin replayPlugin = ReplayPlugin.getInstance();
         if (replayPlugin.getCurrentRecordingSession() == null) {

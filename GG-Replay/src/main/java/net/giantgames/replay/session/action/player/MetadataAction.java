@@ -7,8 +7,8 @@ import net.giantgames.replay.session.object.PacketEntity;
 
 import java.io.Serializable;
 
-@AllArgsConstructor
 @Getter
+@AllArgsConstructor
 public class MetadataAction<E extends PacketEntity> implements IAction<E> {
 
     private final Type type;

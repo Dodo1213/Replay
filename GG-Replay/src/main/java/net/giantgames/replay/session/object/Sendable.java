@@ -1,7 +1,9 @@
 package net.giantgames.replay.session.object;
 
+import com.comphenix.protocol.ProtocolLib;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.lang.reflect.InvocationTargetException;
@@ -27,7 +29,14 @@ public interface Sendable {
         PacketContainer[] containers = send();
 
         for (int i = 0; i < containers.length; i++) {
-            ProtocolLibrary.getProtocolManager().broadcastServerPacket(containers[i]);
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                try {
+                    ProtocolLibrary.getProtocolManager().sendServerPacket(player, containers[i]);
+                } catch (InvocationTargetException exception) {
+                    exception.printStackTrace();
+                }
+            }
+
         }
     }
 

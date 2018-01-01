@@ -35,7 +35,8 @@ public class FrameBuilder<E extends IReplayObject> {
 
     public Frame<E> buildAndClear() {
         Frame<E> frame = build();
-        return clear().build();
+        clear();
+        return frame;
     }
 
     public Frame<E> build() {

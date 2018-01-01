@@ -4,6 +4,7 @@ package net.giantgames.replay.serialize;
 import lombok.Getter;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.util.Vector;
 
 import java.io.Serializable;
 
@@ -15,7 +16,12 @@ public class SerializeBlockChange implements Serializable {
     private SerializeBlockInfo to;
 
     public SerializeBlockChange(Block from, Block to) {
-        this.vector = new SerializeBlockVector(from.getLocation().toVector());
+        if (from == null && to == null) {
+            this.vector = new SerializeBlockVector(new Vector(0, 0, 0));
+        }
+        this.vector = new SerializeBlockVector(from == null ? to.getLocation().toVector() : from.getLocation().toVector());
+        this.from = SerializeBlockInfo.of(from);
+        this.to = SerializeBlockInfo.of(to);
     }
 
     public void applyFrom(World world) {

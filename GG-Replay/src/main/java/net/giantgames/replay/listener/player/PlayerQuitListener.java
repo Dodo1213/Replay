@@ -10,7 +10,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 public class PlayerQuitListener implements Listener {
 
     @EventHandler
-    private void onCall(PlayerQuitEvent event) {
+    public void onCall(PlayerQuitEvent event) {
 
         ReplayPlugin replayPlugin = ReplayPlugin.getInstance();
         if (replayPlugin.getCurrentRecordingSession() == null) {

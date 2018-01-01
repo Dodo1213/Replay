@@ -1,18 +1,15 @@
 package net.giantgames.replay.session.object;
 
-import com.comphenix.packetwrapper.*;
-import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.*;
-import lombok.AllArgsConstructor;
+import com.comphenix.protocol.wrappers.EnumWrappers;
+import com.comphenix.protocol.wrappers.PlayerInfoData;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import com.comphenix.protocol.wrappers.WrappedGameProfile;
 import lombok.Getter;
 import org.bukkit.Location;
-import org.bukkit.block.Block;
-import org.bukkit.inventory.ItemStack;
 
-import java.io.Serializable;
 import java.util.Arrays;
-import java.util.UUID;
 
 @Getter
 public final class PacketPlayer extends PacketEntity {
@@ -24,53 +21,51 @@ public final class PacketPlayer extends PacketEntity {
         super(packetWorld, profile.getUUID(), location);
         this.profile = profile;
 
-
         this.dataWatcher.setObject(6, Float.valueOf(20));
         this.dataWatcher.setObject(10, Byte.valueOf((byte) 127));
     }
 
     @Override
     public PacketContainer[] send() {
-        WrapperPlayServerNamedEntitySpawn namedEntitySpawn = new WrapperPlayServerNamedEntitySpawn();
-        namedEntitySpawn.setEntityID(entityId);
-        namedEntitySpawn.setPlayerUUID(uniqueId);
-        namedEntitySpawn.setPosition(location.toVector());
-        namedEntitySpawn.setYaw(location.getYaw());
-        namedEntitySpawn.setPitch(location.getPitch());
-        namedEntitySpawn.setMetadata(dataWatcher);
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.NAMED_ENTITY_SPAWN);
+        packetContainer.getIntegers().write(0, entityId);
+        packetContainer.getIntegers().write(1, (int) location.getX() * 32);
+        packetContainer.getIntegers().write(2, (int) location.getY() * 32);
+        packetContainer.getIntegers().write(3, (int) location.getZ() * 32);
+        packetContainer.getBytes().write(0, (byte) (location.getYaw() * 256.0F / 360.0F));
+        packetContainer.getBytes().write(1, (byte) (location.getPitch() * 256.0F / 360.0F));
+        packetContainer.getUUIDs().write(0, uniqueId);
+        packetContainer.getDataWatcherModifier().write(0, dataWatcher);
 
-        WrapperPlayServerPlayerInfo playServerPlayerInfo = new WrapperPlayServerPlayerInfo();
-        playServerPlayerInfo.setAction(EnumWrappers.PlayerInfoAction.ADD_PLAYER);
-        playServerPlayerInfo.setData(Arrays
+
+        PacketContainer container = new PacketContainer(PacketType.Play.Server.PLAYER_INFO);
+        container.getPlayerInfoAction().write(0, EnumWrappers.PlayerInfoAction.ADD_PLAYER);
+        container.getPlayerInfoDataLists().write(0, Arrays
                 .asList(new PlayerInfoData(profile,
                         0,
                         EnumWrappers.NativeGameMode.NOT_SET,
                         WrappedChatComponent.fromText(profile.getName()))));
 
-        return new PacketContainer[]{namedEntitySpawn.getHandle(), playServerPlayerInfo.getHandle()};
+        packetWorld.add(this);
+
+        return new PacketContainer[]{packetContainer, container};
     }
 
     @Override
     public PacketContainer[] remove() {
-        WrapperPlayServerPlayerInfo playServerPlayerInfo = new WrapperPlayServerPlayerInfo();
-        playServerPlayerInfo.setAction(EnumWrappers.PlayerInfoAction.REMOVE_PLAYER);
-        playServerPlayerInfo.setData(Arrays
+        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.PLAYER_INFO);
+        packetContainer.getPlayerInfoAction().write(0, EnumWrappers.PlayerInfoAction.REMOVE_PLAYER);
+        packetContainer.getPlayerInfoDataLists().write(0, Arrays
                 .asList(new PlayerInfoData(profile,
                         0,
                         EnumWrappers.NativeGameMode.NOT_SET,
                         WrappedChatComponent.fromText(profile.getName()))));
 
-        WrapperPlayServerEntityDestroy playServerEntityDestroy = new WrapperPlayServerEntityDestroy();
-        playServerEntityDestroy.setEntityIds(new int[]{entityId});
 
-        return new PacketContainer[]{playServerPlayerInfo.getHandle(), playServerEntityDestroy.getHandle()};
-    }
+        PacketContainer conatiner = new PacketContainer(PacketType.Play.Server.ENTITY_DESTROY);
+        conatiner.getIntegerArrays().write(0, new int[]{entityId});
 
-    public void blockBreakAnimation(Block block) {
-        WrapperPlayServerBlockBreakAnimation blockBreakAnimation = new WrapperPlayServerBlockBreakAnimation();
-        blockBreakAnimation.setDestroyStage(block.getBlockPower());
-        blockBreakAnimation.setEntityID(entityId);
-        blockBreakAnimation.setLocation(new BlockPosition(block.getLocation().toVector()));
+        return new PacketContainer[]{packetContainer, conatiner};
     }
 
 }

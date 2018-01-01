@@ -9,7 +9,7 @@ import org.bukkit.event.entity.EntitySpawnEvent;
 public class EntitySpawnListener implements Listener {
 
     @EventHandler
-    private void onCall(EntitySpawnEvent event) {
+    public void onCall(EntitySpawnEvent event) {
         if (event.getEntity() instanceof Item) {
             if (event.isCancelled()) {
                 return;

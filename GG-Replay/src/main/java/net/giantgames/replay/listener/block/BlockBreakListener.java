@@ -1,18 +1,18 @@
-package net.giantgames.replay.listener.entity;
+package net.giantgames.replay.listener.block;
 
 import net.giantgames.replay.ReplayPlugin;
-import net.giantgames.replay.session.action.entity.StatusAction;
+import net.giantgames.replay.serialize.SerializeBlockChange;
 import net.giantgames.replay.session.action.player.MetadataAction;
-import net.giantgames.replay.session.object.PacketEntity;
+import net.giantgames.replay.session.action.world.BlockChangeAction;
 import net.giantgames.replay.session.recorder.AbstractRecorder;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.block.BlockBreakEvent;
 
-public class EntityDamageListener implements Listener {
+public class BlockBreakListener implements Listener {
 
     @EventHandler
-    public void onCall(EntityDamageEvent event) {
+    public void onCall(BlockBreakEvent event) {
         if (event.isCancelled()) {
             return;
         }
@@ -22,10 +22,11 @@ public class EntityDamageListener implements Listener {
             return;
         }
 
-        AbstractRecorder recorder = replayPlugin.getCurrentRecordingSession().getRecorder(event.getEntity().getUniqueId());
+        AbstractRecorder recorder = replayPlugin.getCurrentRecordingSession().getWorldRecorder();
         if (recorder != null) {
-            recorder.getFrameBuilder().add(new StatusAction(PacketEntity.Status.HURT));
+            recorder.getFrameBuilder().add(new BlockChangeAction(new SerializeBlockChange(event.getBlock(), null)));
         }
+
     }
 
 }

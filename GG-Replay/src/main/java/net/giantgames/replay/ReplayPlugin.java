@@ -14,7 +14,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 @Setter
 public class ReplayPlugin extends JavaPlugin {
 
-    public static final long UPDATE_INTERVAL = 100;
+    public static final long UPDATE_INTERVAL = 50;
     public static final String PREFIX = "§b§lGiant§5§lEye §8» §7";
     @Getter
     private static ReplayPlugin instance;
@@ -33,9 +33,9 @@ public class ReplayPlugin extends JavaPlugin {
     public void onEnable() {
         getCommand("replay").setExecutor(new ReplayCommand());
 
-        Classes.forEach("net.giantgames.listener", Listener.class, (listener) -> {
+        Classes.forEach("net.giantgames.replay.listener", Listener.class, (listener) -> {
             Bukkit.getPluginManager().registerEvents(listener, this);
-        }, "player entity".split(" "), false);
+        }, "player entity block".split(" "), false);
     }
 
     @Override
