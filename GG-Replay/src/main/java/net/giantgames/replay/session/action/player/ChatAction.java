@@ -10,13 +10,11 @@ import org.bukkit.Bukkit;
 @Getter
 public class ChatAction implements IAction<PacketPlayer> {
 
-    private static final String FORMAT = "§3>> §e%s §7wrote : §b%s";
-
     private final String chat;
 
     @Override
     public void apply(int velocity, PacketPlayer object) {
-        Bukkit.broadcastMessage(String.format(FORMAT, object.getProfile().getName(), chat));
+        Bukkit.broadcastMessage(chat);
     }
 
 }

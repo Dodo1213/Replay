@@ -4,12 +4,13 @@ import net.giantgames.replay.ReplayPlugin;
 import net.giantgames.replay.session.action.entity.RemoveAction;
 import net.giantgames.replay.session.recorder.AbstractRecorder;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 public class PlayerQuitListener implements Listener {
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onCall(PlayerQuitEvent event) {
 
         ReplayPlugin replayPlugin = ReplayPlugin.getInstance();

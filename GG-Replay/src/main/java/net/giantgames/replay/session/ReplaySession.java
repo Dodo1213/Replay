@@ -58,38 +58,56 @@ public class ReplaySession {
         if (velocity == 0) {
             return;
         }
-
         recording.play(frame, velocity);
 
         frame += velocity > 0 ? 1 : -1;
         keep();
-        System.out.println(frame);
     }
 
-    public void shiftBackwards(int units) {
-        this.frame -= units;
+    private synchronized boolean hasValidFrame(int frame) {
+        if (frame >= totalFrames) {
+            return false;
+        }
+        if (frame < 0) {
+            return false;
+        }
+        return true;
     }
 
-    public void shiftForward(int units) {
-        this.frame += units;
-    }
-
-    public void pause(int velocity) {
+    public void pause() {
         this.velocity = 0;
     }
 
     private synchronized void keep() {
         if (frame >= totalFrames) {
-            frame = 0;
+            velocity *= -1;
+            frame = totalFrames-1;
         }
         if (frame < 0) {
-            frame = totalFrames - 1;
+            velocity *= -1;
+            frame = 0;
         }
     }
 
     public synchronized void stop() {
         this.stopRequested = true;
         this.running = false;
+        if(ReplayPlugin.getInstance().getCurrentReplaySession().equals(this))
+            ReplayPlugin.getInstance().setCurrentReplaySession(null);
+    }
+
+    public void forward(int frames) {
+        for(; this.frame < this.frame+frames; this.frame ++) {
+            System.out.println(this.frame);
+            recording.play(this.frame, velocity);
+        }
+    }
+
+    public void rewind(int frames) {
+        for(; this.frame > this.frame-frames; this.frame --) {
+            System.out.println(this.frame);
+            recording.play(this.frame, -velocity);
+        }
     }
 
 }

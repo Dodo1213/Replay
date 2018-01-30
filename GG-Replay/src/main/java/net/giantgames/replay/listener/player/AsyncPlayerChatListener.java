@@ -11,23 +11,19 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 
 public class AsyncPlayerChatListener implements Listener {
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onCall(AsyncPlayerChatEvent event) {
-
         if (event.isCancelled()) {
             return;
         }
-
         ReplayPlugin replayPlugin = ReplayPlugin.getInstance();
         if (replayPlugin.getCurrentRecordingSession() == null) {
             return;
         }
-
         AbstractRecorder recorder = replayPlugin.getCurrentRecordingSession().getRecorder(event.getPlayer().getUniqueId());
         if (recorder != null) {
-            recorder.getFrameBuilder().add(new ChatAction(event.getMessage()));
+            recorder.getFrameBuilder().add(new ChatAction(event.getFormat()+event.getMessage()));
         }
-
     }
 
 }

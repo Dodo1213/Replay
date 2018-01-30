@@ -1,21 +1,25 @@
 package net.giantgames.replay.session.object;
 
+import com.comphenix.packetwrapper.WrapperPlayServerEntityMetadata;
+import com.comphenix.packetwrapper.WrapperPlayServerEntityStatus;
+import com.comphenix.packetwrapper.WrapperPlayServerNamedEntitySpawn;
+import com.comphenix.packetwrapper.WrapperPlayServerPlayerInfo;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.events.PacketContainer;
-import com.comphenix.protocol.wrappers.EnumWrappers;
-import com.comphenix.protocol.wrappers.PlayerInfoData;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
+import com.comphenix.protocol.wrappers.*;
 import lombok.Getter;
 import org.bukkit.Location;
+import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 @Getter
 public final class PacketPlayer extends PacketEntity {
 
     private final WrappedGameProfile profile;
-
 
     public PacketPlayer(PacketWorld packetWorld, Location location, WrappedGameProfile profile) {
         super(packetWorld, profile.getUUID(), location);
@@ -27,28 +31,25 @@ public final class PacketPlayer extends PacketEntity {
 
     @Override
     public PacketContainer[] send() {
-        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.NAMED_ENTITY_SPAWN);
-        packetContainer.getIntegers().write(0, entityId);
-        packetContainer.getIntegers().write(1, (int) location.getX() * 32);
-        packetContainer.getIntegers().write(2, (int) location.getY() * 32);
-        packetContainer.getIntegers().write(3, (int) location.getZ() * 32);
-        packetContainer.getBytes().write(0, (byte) (location.getYaw() * 256.0F / 360.0F));
-        packetContainer.getBytes().write(1, (byte) (location.getPitch() * 256.0F / 360.0F));
-        packetContainer.getUUIDs().write(0, uniqueId);
-        packetContainer.getDataWatcherModifier().write(0, dataWatcher);
-
-
-        PacketContainer container = new PacketContainer(PacketType.Play.Server.PLAYER_INFO);
-        container.getPlayerInfoAction().write(0, EnumWrappers.PlayerInfoAction.ADD_PLAYER);
-        container.getPlayerInfoDataLists().write(0, Arrays
-                .asList(new PlayerInfoData(profile,
-                        0,
-                        EnumWrappers.NativeGameMode.NOT_SET,
-                        WrappedChatComponent.fromText(profile.getName()))));
-
+        PacketContainer infoContainer, spawnContainer;
+        WrapperPlayServerNamedEntitySpawn spawn = new WrapperPlayServerNamedEntitySpawn();
+        spawn.setMetadata(dataWatcher);
+        spawn.setCurrentItem(0);
+        spawn.setEntityId(entityId);
+        spawn.setPitch((byte) (location.getPitch() * 256F / 360F));
+        spawn.setYaw((byte) (location.getYaw() * 256F / 360F));
+        spawn.setPlayerUuid(uniqueId);
+        spawn.setX((int) (location.getX() * 32));
+        spawn.setY((int) (location.getY() * 32));
+        spawn.setZ((int) (location.getZ() * 32));
+        WrapperPlayServerPlayerInfo info = new WrapperPlayServerPlayerInfo();
+        info.setAction(EnumWrappers.PlayerInfoAction.ADD_PLAYER);
+        info.setData(Collections.singletonList(new PlayerInfoData(profile, 0, EnumWrappers.NativeGameMode.SURVIVAL, WrappedChatComponent.fromText(profile.getName()))));
+        infoContainer = info.getHandle();
+        spawnContainer = spawn.getHandle();
         packetWorld.add(this);
 
-        return new PacketContainer[]{packetContainer, container};
+        return new PacketContainer[]{infoContainer, spawnContainer};
     }
 
     @Override
@@ -67,5 +68,4 @@ public final class PacketPlayer extends PacketEntity {
 
         return new PacketContainer[]{packetContainer, conatiner};
     }
-
 }

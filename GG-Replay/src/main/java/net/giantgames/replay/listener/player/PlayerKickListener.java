@@ -10,7 +10,7 @@ import org.bukkit.event.player.PlayerKickEvent;
 
 public class PlayerKickListener implements Listener {
 
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onCall(PlayerKickEvent event) {
 
         if (event.isCancelled()) {

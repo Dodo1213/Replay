@@ -1,12 +1,18 @@
 package net.giantgames.replay.session.object;
 
+import com.comphenix.packetwrapper.WrapperPlayServerEntityEquipment;
+import com.comphenix.packetwrapper.WrapperPlayServerRelEntityMove;
+import com.comphenix.packetwrapper.WrapperPlayServerSpawnEntity;
+import com.comphenix.packetwrapper.WrapperPlayServerSpawnEntityLiving;
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.utility.StreamSerializer;
 import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.comphenix.protocol.wrappers.WrappedDataWatcher;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
@@ -51,16 +57,39 @@ public class PacketEntity implements IReplayObject {
 
     @Override
     public PacketContainer[] send() {
-        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY);
-        packetContainer.getIntegers().write(0, entityId);
-        packetContainer.getIntegers().write(1, (int) location.getX() * 32);
-        packetContainer.getIntegers().write(2, (int) location.getY() * 32);
-        packetContainer.getIntegers().write(3, (int) location.getZ() * 32);
-        packetContainer.getIntegers().write(4, (int) (location.getYaw() * 256.0F / 360.0F));
-        packetContainer.getIntegers().write(5, (int) (location.getPitch() * 256.0F / 360.0F));
-
+        PacketContainer s;
+        System.out.println("Spawn: "+entityType);
+        if (entityType.isAlive()) {
+            WrapperPlayServerSpawnEntityLiving spawn = new WrapperPlayServerSpawnEntityLiving();
+            spawn.setEntityId(entityId);
+            spawn.setHeadPitch((int) (location.getYaw() * 256.0F / 360.0F));
+            spawn.setPitch((int) (location.getPitch() * 256.0F / 360.0F));
+            spawn.setYaw((int) (location.getYaw() * 256.0F / 360.0F));
+            spawn.setMetadata(getDataWatcher());
+            spawn.setType(entityType.getTypeId());
+            spawn.setVelocityX(0);
+            spawn.setVelocityY(0);
+            spawn.setVelocityZ(0);
+            spawn.setX(floor(location.getX() * 32D));
+            spawn.setY(floor(location.getY() * 32D));
+            spawn.setZ(floor(location.getZ() * 32D));
+            s = spawn.getHandle();
+        } else {
+            s = new PacketContainer(PacketType.Play.Server.SPAWN_ENTITY);
+            s.getIntegers().write(0, entityId);
+            s.getIntegers().write(1, floor(location.getX() * 32D));
+            s.getIntegers().write(2, floor(location.getY() * 32D));
+            s.getIntegers().write(3, floor(location.getZ() * 32D));
+            s.getIntegers().write(4, 0);
+            s.getIntegers().write(5, 0);
+            s.getIntegers().write(6, 0);
+            s.getIntegers().write(7, (int) (location.getPitch() * 256.0F / 360.0F));
+            s.getIntegers().write(8, (int) (location.getYaw() * 256.0F / 360.0F));
+            s.getIntegers().write(9, (int) entityType.getTypeId());
+            s.getIntegers().write(10, 0);
+        }
         packetWorld.add(this);
-        return new PacketContainer[]{packetContainer};
+        return new PacketContainer[]{s};
     }
 
     @Override
@@ -73,31 +102,51 @@ public class PacketEntity implements IReplayObject {
     }
 
     public void teleport(Location location) {
+        Location pref = this.location.clone();
+        int deltaX = floor(location.getX() * 32D) - floor(pref.getX() * 32D);
+        int deltaY = floor(location.getY() * 32D) - floor(pref.getY() * 32D);
+        int deltaZ = floor(location.getZ() * 32D) - floor(pref.getZ() * 32D);
         this.location = location;
-        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_TELEPORT);
-        packetContainer.getIntegers().write(0, entityId);
-        packetContainer.getIntegers().write(1, (int) location.getX() * 32);
-        packetContainer.getIntegers().write(2, (int) location.getY() * 32);
-        packetContainer.getIntegers().write(3, (int) location.getZ() * 32);
-        packetContainer.getBytes().write(0, (byte) (location.getYaw() * 256.0F / 360.0F));
-        packetContainer.getBytes().write(1, (byte) (location.getPitch() * 256.0F / 360.0F));
-        packetContainer.getBooleans().write(0, true);
-
+        PacketContainer packetContainer;
+        if (deltaX >= -128 && deltaX < 128 && deltaY >= -128 && deltaY < 128 && deltaZ >= -128 && deltaZ < 128) {
+            WrapperPlayServerRelEntityMove move = new WrapperPlayServerRelEntityMove();
+            move.setEntityId(entityId);
+            move.setOnGround(true);
+            move.getHandle().getBytes().write(0, (byte) deltaX);
+            move.getHandle().getBytes().write(1, (byte) deltaY);
+            move.getHandle().getBytes().write(2, (byte) deltaZ);
+            packetContainer = move.getHandle();
+        } else {
+            packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_TELEPORT);
+            packetContainer.getIntegers().write(0, entityId);
+            packetContainer.getIntegers().write(1, floor(location.getX() * 32));
+            packetContainer.getIntegers().write(2, floor(location.getY() * 32));
+            packetContainer.getIntegers().write(3, floor(location.getZ() * 32));
+            packetContainer.getBytes().write(0, (byte) (location.getYaw() * 256.0F / 360.0F));
+            packetContainer.getBytes().write(1, (byte) (location.getPitch() * 256.0F / 360.0F));
+            packetContainer.getBooleans().write(0, true);
+        }
         broadcast(packetContainer);
-
         rotate(location.getYaw(), location.getPitch());
     }
 
+    private int floor(double value) {
+        int i = (int) value;
+        return value < (double) i ? i - 1 : i;
+    }
+
     public void rotate(float yaw, float pitch) {
+        byte decodedYaw = (byte) (yaw * 256.0F / 360.0F);
+        byte decodedPitch = (byte) (pitch * 256.0F / 360.0F);
         PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_LOOK);
         packetContainer.getIntegers().write(0, entityId);
-        packetContainer.getBytes().write(1, (byte) (yaw * 256.0F / 360.0F));
-        packetContainer.getBytes().write(2, (byte) (pitch * 256.0F / 360.0F));
+        packetContainer.getBytes().write(3, decodedYaw);
+        packetContainer.getBytes().write(4, decodedPitch);
         packetContainer.getBooleans().write(0, true);
 
         PacketContainer container = new PacketContainer(PacketType.Play.Server.ENTITY_HEAD_ROTATION);
         container.getIntegers().write(0, entityId);
-        container.getBytes().write(0, (byte) ((int) (yaw * 256.0F / 360.0F)));
+        container.getBytes().write(0, (byte) (floor(yaw * 256.0F / 360.0F)));
         broadcast(packetContainer, container);
     }
 
@@ -114,26 +163,27 @@ public class PacketEntity implements IReplayObject {
         PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_STATUS);
         packetContainer.getIntegers().write(0, entityId);
         packetContainer.getBytes().write(0, status.getStatus());
-
         broadcast(packetContainer);
     }
 
     public void equip(Slot slot, ItemStack itemStack) {
         equipment[slot.ordinal()] = itemStack;
-
-        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_EQUIPMENT);
+/*        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_EQUIPMENT);
         packetContainer.getIntegers().write(0, entityId);
         packetContainer.getItemSlots().write(0, slot.getItemSlot());
-        packetContainer.getItemModifier().write(0, itemStack);
+        packetContainer.getItemModifier().write(0, itemStack);*/
 
-        broadcast(packetContainer);
+        WrapperPlayServerEntityEquipment e = new WrapperPlayServerEntityEquipment();
+        e.setEntityid(entityId);
+        e.setItem(itemStack);
+        e.setSlot(slot.slotId);
+        broadcast(e.getHandle());
     }
 
     public void updateMetadata() {
         PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.ENTITY_METADATA);
         packetContainer.getWatchableCollectionModifier().write(0, dataWatcher.getWatchableObjects());
         packetContainer.getIntegers().write(0, entityId);
-
         broadcast(packetContainer);
     }
 
@@ -157,16 +207,28 @@ public class PacketEntity implements IReplayObject {
     @AllArgsConstructor
     public enum Slot implements Serializable {
 
-        HAND(EnumWrappers.ItemSlot.MAINHAND.ordinal()),
-        HELMET(EnumWrappers.ItemSlot.HEAD.ordinal()),
-        CHESTPLATE(EnumWrappers.ItemSlot.CHEST.ordinal()),
-        LEGGINGS(EnumWrappers.ItemSlot.LEGS.ordinal()),
-        BOOTS(EnumWrappers.ItemSlot.FEET.ordinal());
+        HAND(0),
+        HELMET(4),
+        CHESTPLATE(3),
+        LEGGINGS(2),
+        BOOTS(1);
 
         private final int slotId;
 
         public EnumWrappers.ItemSlot getItemSlot() {
-            return EnumWrappers.ItemSlot.values()[slotId];
+            if (this == HAND) {
+                return EnumWrappers.ItemSlot.MAINHAND;
+            } else if (this == HELMET) {
+                return EnumWrappers.ItemSlot.HEAD;
+            } else if (this == CHESTPLATE) {
+                return EnumWrappers.ItemSlot.CHEST;
+            } else if (this == LEGGINGS) {
+                return EnumWrappers.ItemSlot.LEGS;
+            } else if (this == BOOTS) {
+                return EnumWrappers.ItemSlot.FEET;
+            } else {
+                return null;
+            }
         }
 
         public static Slot fromArmorSlot(int slot) {

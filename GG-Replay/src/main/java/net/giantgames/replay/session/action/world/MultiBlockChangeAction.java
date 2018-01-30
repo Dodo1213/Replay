@@ -7,7 +7,6 @@ import net.giantgames.replay.session.action.IAction;
 import net.giantgames.replay.session.object.PacketWorld;
 
 import java.util.Collection;
-import java.util.List;
 
 @AllArgsConstructor
 @Getter

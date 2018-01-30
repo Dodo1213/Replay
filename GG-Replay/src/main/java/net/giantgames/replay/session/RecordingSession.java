@@ -3,19 +3,20 @@ package net.giantgames.replay.session;
 import gnu.trove.map.hash.THashMap;
 import gnu.trove.set.hash.THashSet;
 import lombok.Getter;
+import net.giantgames.replay.io.FileRecordStorage;
 import net.giantgames.replay.session.object.PacketEntity;
 import net.giantgames.replay.session.object.PacketWorld;
-import net.giantgames.replay.session.recorder.AbstractRecorder;
-import net.giantgames.replay.session.recorder.EntityRecorder;
-import net.giantgames.replay.session.recorder.PlayerRecorder;
-import net.giantgames.replay.session.recorder.WorldRecorder;
+import net.giantgames.replay.session.recorder.*;
 import net.giantgames.replay.session.recorder.result.Recording;
 import net.giantgames.replay.session.recorder.result.ServerRecording;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.function.Consumer;
 
@@ -38,16 +39,26 @@ public class RecordingSession {
         this.thread = new Thread(new RecordingTask(this, worldRecorder, period, profile, new Consumer<ServerRecording>() {
             @Override
             public void accept(ServerRecording recording) {
+                System.out.println("Now exporting replay: ".concat(recording.getProfile().getGameId()));
 
-                System.out.println("Now replaying: ".concat(recording.getProfile().getGameId()));
-
-                ReplaySession replaySession = new ReplaySession(recording);
-                replaySession.run();
+                File file = new File("./plugins/Replay/records/"+recording.getProfile().getGameId()+".rec");
+                file.getParentFile().mkdirs();
+                FileRecordStorage fileRecordStorage = new FileRecordStorage(file);
+                try {
+                    fileRecordStorage.export(recording);
+                    System.out.println("Exporting done.");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }));
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
+        for (Player player : world.getPlayers()) {
             record(player);
+        }
+        for(Entity e : world.getEntities()) {
+            if(e instanceof Player) continue;
+            recordEntity(e);
         }
     }
 
@@ -61,8 +72,13 @@ public class RecordingSession {
     }
 
     public void recordEntity(Entity entity) {
-        EntityRecorder<Entity, PacketEntity> entityRecorder = new EntityRecorder<>(entity);
-        recorders.put(entity.getUniqueId(), entityRecorder);
+        EntityRecorder recorder;
+        if(entity instanceof Item) {
+            recorder = new ItemRecorder((Item) entity);
+        } else {
+            recorder = new EntityRecorder(entity);
+        }
+        recorders.put(entity.getUniqueId(), recorder);
     }
 
     public void record(Player player) {

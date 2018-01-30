@@ -23,6 +23,14 @@
             <id>mojang-repo</id>
             <url>https://nexus.aur.rocks/repository/kk-central/</url>
         </repository>
+        <repository>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+        <repository>
+            <id>giantgames-private</id>
+            <url>http://giantgames.net:8081/repository/giantgames-private/</url>
+        </repository>
     </repositories>
 
 
@@ -33,9 +41,9 @@
             <version>LATEST</version>
         </dependency>
         <dependency>
-            <groupId>com.comphenix.packetwrapper</groupId>
+            <groupId>com.dmulloy2</groupId>
             <artifactId>PacketWrapper</artifactId>
-            <version>LATEST</version>
+            <version>1.8</version>
         </dependency>
 
         <dependency>
@@ -66,9 +74,9 @@
             <version>3.0.3</version>
         </dependency>
         <dependency>
-            <groupId>org.bukkit</groupId>
-            <artifactId>craftbukkit</artifactId>
-            <version>1.8.8-R0.1-SNAPSHOT</version>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.5</version>
         </dependency>
     </dependencies>
 

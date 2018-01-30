@@ -2,9 +2,6 @@ package net.giantgames.replay.session.recorder.result;
 
 import lombok.Getter;
 import net.giantgames.replay.session.SessionProfile;
-import net.giantgames.replay.session.action.IAction;
-import net.giantgames.replay.session.frame.Frame;
-import net.giantgames.replay.session.object.IReplayObject;
 import net.giantgames.replay.session.object.PacketWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.World;

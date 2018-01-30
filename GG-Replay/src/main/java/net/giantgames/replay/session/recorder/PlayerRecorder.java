@@ -1,18 +1,18 @@
 package net.giantgames.replay.session.recorder;
 
-import static net.giantgames.replay.session.object.PacketEntity.Slot.*;
-
 import lombok.Getter;
 import lombok.Setter;
 import net.giantgames.replay.serialize.SerializeGameProfile;
 import net.giantgames.replay.serialize.SerializeReplayObject;
-import net.giantgames.replay.session.object.PacketEntity;
-import net.giantgames.replay.session.recorder.result.Recording;
 import net.giantgames.replay.session.action.entity.EquipAction;
 import net.giantgames.replay.session.frame.Frame;
+import net.giantgames.replay.session.object.PacketEntity;
 import net.giantgames.replay.session.object.PacketPlayer;
+import net.giantgames.replay.session.recorder.result.Recording;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+
+import static net.giantgames.replay.session.object.PacketEntity.Slot.*;
 
 @Getter
 @Setter
@@ -59,6 +59,6 @@ public class PlayerRecorder extends EntityRecorder<Player, PacketPlayer> {
 
     @Override
     public Recording finish() {
-        return new Recording(startFrame, new SerializeReplayObject(entity.getUniqueId().toString(), 10, new SerializeGameProfile(entity)), frames);
+        return new Recording(startFrame, new SerializeReplayObject(entity.getUniqueId().toString(), 10, new SerializeGameProfile(entity), null), frames);
     }
 }

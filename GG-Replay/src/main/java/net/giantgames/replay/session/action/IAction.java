@@ -7,6 +7,8 @@ import java.io.Serializable;
 @FunctionalInterface
 public interface IAction<E extends IReplayObject> extends Serializable {
 
+    public static final long serialVersionUID = 8327489L;
+
     void apply(int velocity, E object);
 
 }

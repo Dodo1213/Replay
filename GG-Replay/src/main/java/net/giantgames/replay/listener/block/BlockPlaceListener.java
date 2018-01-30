@@ -5,12 +5,13 @@ import net.giantgames.replay.serialize.SerializeBlockChange;
 import net.giantgames.replay.session.action.world.BlockChangeAction;
 import net.giantgames.replay.session.recorder.AbstractRecorder;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 public class BlockPlaceListener implements Listener {
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onCall(BlockPlaceEvent event) {
         if (event.isCancelled()) {
             return;
@@ -18,6 +19,10 @@ public class BlockPlaceListener implements Listener {
 
         ReplayPlugin replayPlugin = ReplayPlugin.getInstance();
         if (replayPlugin.getCurrentRecordingSession() == null) {
+            return;
+        }
+
+        if(!event.getBlock().getWorld().getUID().equals(replayPlugin.getCurrentRecordingSession().getPacketWorld().getWorld().getUID())) {
             return;
         }
 

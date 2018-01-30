@@ -6,12 +6,13 @@ import net.giantgames.replay.session.action.player.MetadataAction;
 import net.giantgames.replay.session.action.world.BlockChangeAction;
 import net.giantgames.replay.session.recorder.AbstractRecorder;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 
 public class BlockBreakListener implements Listener {
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onCall(BlockBreakEvent event) {
         if (event.isCancelled()) {
             return;
@@ -19,6 +20,10 @@ public class BlockBreakListener implements Listener {
 
         ReplayPlugin replayPlugin = ReplayPlugin.getInstance();
         if (replayPlugin.getCurrentRecordingSession() == null) {
+            return;
+        }
+
+        if(!event.getBlock().getWorld().getUID().equals(replayPlugin.getCurrentRecordingSession().getPacketWorld().getWorld().getUID())) {
             return;
         }
 

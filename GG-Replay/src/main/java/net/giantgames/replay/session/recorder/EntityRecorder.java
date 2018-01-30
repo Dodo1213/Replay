@@ -3,14 +3,16 @@ package net.giantgames.replay.session.recorder;
 import lombok.Getter;
 import net.giantgames.replay.serialize.SerializeLocation;
 import net.giantgames.replay.serialize.SerializeReplayObject;
+import net.giantgames.replay.session.action.entity.MoveAction;
 import net.giantgames.replay.session.action.entity.RemoveAction;
 import net.giantgames.replay.session.action.entity.SpawnAction;
-import net.giantgames.replay.session.recorder.result.Recording;
-import net.giantgames.replay.session.action.entity.MoveAction;
 import net.giantgames.replay.session.frame.Frame;
 import net.giantgames.replay.session.object.PacketEntity;
+import net.giantgames.replay.session.recorder.result.Recording;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 
 @Getter
 public class EntityRecorder<E extends Entity, T extends PacketEntity> extends AbstractRecorder<T> {
@@ -23,7 +25,7 @@ public class EntityRecorder<E extends Entity, T extends PacketEntity> extends Ab
     public EntityRecorder(E entity) {
         this.entity = entity;
         this.lastLocation = entity.getLocation();
-        this.frameBuilder.add(new SpawnAction<>());
+        this.frameBuilder.add(new SpawnAction<>()).add(new MoveAction<>(SerializeLocation.from(Bukkit.getWorlds().get(0).getSpawnLocation()), SerializeLocation.from(lastLocation)));
     }
 
     @Override
@@ -34,7 +36,7 @@ public class EntityRecorder<E extends Entity, T extends PacketEntity> extends Ab
         }
 
         Location location = entity.getLocation();
-        if (lastLocation != null) {
+        if(lastLocation != null && !(entity instanceof Player)) {
             if (location.distanceSquared(lastLocation) > MIN_DISTANCE || location.getYaw() != lastLocation.getYaw() || location.getPitch() != lastLocation.getPitch()) {
                 frameBuilder.add(new MoveAction<T>(SerializeLocation.from(lastLocation), SerializeLocation.from(location)));
             }
@@ -46,7 +48,7 @@ public class EntityRecorder<E extends Entity, T extends PacketEntity> extends Ab
 
     @Override
     public Recording finish() {
-        return new Recording(startFrame, new SerializeReplayObject(entity.getUniqueId().toString(), entity.getType().getTypeId(), null), frames);
+        return new Recording(startFrame, new SerializeReplayObject(entity.getUniqueId().toString(), entity.getType().getTypeId(), null, null), frames);
     }
 
     @Override

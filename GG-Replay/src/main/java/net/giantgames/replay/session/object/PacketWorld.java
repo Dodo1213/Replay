@@ -11,7 +11,10 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import net.giantgames.replay.ReplayPlugin;
 import net.giantgames.replay.serialize.SerializeBlockChange;
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -20,6 +23,10 @@ import org.bukkit.block.Block;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Getter
 public class PacketWorld implements IReplayObject {
@@ -70,17 +77,15 @@ public class PacketWorld implements IReplayObject {
     }
 
     public void blockChange(SerializeBlockChange blockChange, int velocity) {
-
-        Location location = blockChange.getVector().convert().toLocation(world);
-        Chunk chunk = location.getChunk();
-
-        this.blockChanges.put(new ChunkCoordIntPair(chunk.getX(), chunk.getZ()), blockChange);
-
-        PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.BLOCK_CHANGE);
-        packetContainer.getBlockData().write(0, velocity > 0 ? blockChange.getTo().convert() : blockChange.getFrom().convert());
-        packetContainer.getBlockPositionModifier().write(0, new BlockPosition(location.toVector()));
-
-        ProtocolLibrary.getProtocolManager().broadcastServerPacket(packetContainer);
+        Bukkit.getScheduler().runTask(ReplayPlugin.getInstance(), () -> {
+            Location location = blockChange.getVector().convert().toLocation(world);
+            Chunk chunk = location.getChunk();
+            this.blockChanges.put(new ChunkCoordIntPair(chunk.getX(), chunk.getZ()), blockChange);
+            PacketContainer packetContainer = new PacketContainer(PacketType.Play.Server.BLOCK_CHANGE);
+            packetContainer.getBlockData().write(0, velocity > 0 ? blockChange.getTo().convert() : blockChange.getFrom().convert());
+            packetContainer.getBlockPositionModifier().write(0, new BlockPosition(location.toVector()));
+            ProtocolLibrary.getProtocolManager().broadcastServerPacket(packetContainer);
+        });
     }
 
     @Override
@@ -138,7 +143,57 @@ public class PacketWorld implements IReplayObject {
     }
 
     public MultiBlockChangeInfo getRealBlock(Location location) {
-        Block block = location.getBlock();
+        Block block = new RealBlockFuture(location).getBlock();
         return new MultiBlockChangeInfo(location, WrappedBlockData.createData(block.getType(), block.getTypeId()));
     }
+
+    @RequiredArgsConstructor
+    private class RealBlockFuture implements Future<Block> {
+
+        private Block block;
+        private final Location location;
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return false;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        @Override
+        public boolean isDone() {
+            return block != null;
+        }
+
+        @Override
+        public Block get() throws InterruptedException, ExecutionException {
+            Bukkit.getScheduler().runTask(ReplayPlugin.getInstance(), () -> {
+                block = location.getBlock();
+            });
+            while (!isDone()) {
+                Thread.yield();
+            }
+            return block;
+        }
+
+        public Block getBlock() {
+            try {
+                return get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        public Block get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            return null;
+        }
+    }
+
 }

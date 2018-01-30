@@ -28,7 +28,6 @@ public final class Frame<E extends IReplayObject> implements Serializable {
 
     public void play(E replayObject, int velocity) {
         for (int i = 0; i < actions.length; i++) {
-            System.out.printf("%s%n", actions[i].getClass().getSimpleName());
             actions[i].apply(velocity, replayObject);
         }
     }

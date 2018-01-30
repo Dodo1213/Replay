@@ -2,10 +2,7 @@ package net.giantgames.replay.serialize;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import net.giantgames.replay.session.object.IReplayObject;
-import net.giantgames.replay.session.object.PacketEntity;
-import net.giantgames.replay.session.object.PacketPlayer;
-import net.giantgames.replay.session.object.PacketWorld;
+import net.giantgames.replay.session.object.*;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.EntityType;
@@ -20,6 +17,7 @@ public class SerializeReplayObject implements Serializable {
     private String name;
     private int entityType;
     private SerializeGameProfile gameProfile;
+    private SerializeItemStack itemStack;
 
     public SerializeReplayObject(IReplayObject replayObject) {
         this.entityType = -2;
@@ -30,6 +28,10 @@ public class SerializeReplayObject implements Serializable {
             PacketEntity packetEntity = (PacketEntity) replayObject;
             this.entityType = packetEntity.getEntityType().getTypeId();
             this.name = packetEntity.getUniqueId().toString();
+
+            if(replayObject instanceof PacketItem) {
+                this.itemStack = SerializeItemStack.from(((PacketItem) replayObject).getItemStack());
+            }
 
             if (replayObject instanceof PacketPlayer) {
                 this.gameProfile = new SerializeGameProfile(((PacketPlayer) replayObject).getProfile());
@@ -47,6 +49,10 @@ public class SerializeReplayObject implements Serializable {
 
         if (gameProfile != null) {
             return new PacketPlayer(packetWorld, Bukkit.getWorlds().get(0).getSpawnLocation(), gameProfile.convert());
+        }
+
+        if(entityType == 1) {
+            return new PacketItem(packetWorld, Bukkit.getWorlds().get(0).getSpawnLocation(), SerializeItemStack.to(itemStack));
         }
 
         UUID uuid = null;

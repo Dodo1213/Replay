@@ -7,7 +7,6 @@ import net.giantgames.replay.session.object.PacketEntity;
 
 import java.io.Serializable;
 
-@Getter
 @AllArgsConstructor
 public class MetadataAction<E extends PacketEntity> implements IAction<E> {
 
@@ -16,12 +15,15 @@ public class MetadataAction<E extends PacketEntity> implements IAction<E> {
 
     @Override
     public void apply(int velocity, E object) {
-        byte id = object.getDataWatcher().getByte(0);
-        if (flag) {
+        byte id = 0;
+        boolean ourFlag = flag;
+        if(velocity < 0) ourFlag = !ourFlag;
+        if (ourFlag) {
             object.getDataWatcher().setObject(id, (byte) (id | 1 << type.getIndex()));
         } else {
             object.getDataWatcher().setObject(id, (byte) (id & ~(1 << type.getIndex())));
         }
+        object.updateMetadata();
     }
 
     @Getter

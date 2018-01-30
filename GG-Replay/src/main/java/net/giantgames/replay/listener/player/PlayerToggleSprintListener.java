@@ -4,12 +4,13 @@ import net.giantgames.replay.ReplayPlugin;
 import net.giantgames.replay.session.action.player.MetadataAction;
 import net.giantgames.replay.session.recorder.AbstractRecorder;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSprintEvent;
 
 public class PlayerToggleSprintListener implements Listener {
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onCall(PlayerToggleSprintEvent event) {
 
         if (event.isCancelled()) {
@@ -23,7 +24,7 @@ public class PlayerToggleSprintListener implements Listener {
 
         AbstractRecorder recorder = replayPlugin.getCurrentRecordingSession().getRecorder(event.getPlayer().getUniqueId());
         if (recorder != null) {
-            recorder.getFrameBuilder().add(new MetadataAction(MetadataAction.Type.SNEAK, event.isSprinting()));
+            recorder.getFrameBuilder().add(new MetadataAction(MetadataAction.Type.SPRINT, event.isSprinting()));
         }
     }
 
